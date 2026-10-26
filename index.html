@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cobrança de Danos no Airbnb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: uma coluna de leitura (~780px): problema → o que mudou → funil em 8 etapas → travas → estado real → próximas skills */
+:root {
+  --bg: #f6f8f8; --surface: #ffffff; --fg: #16232a; --muted: #5a6b72; --line: #d8e1e3;
+  --accent: #0f6b74; --accent-soft: #e2f0f1;
+  --good: #1f7a46; --good-soft: #e3f3e9; --warn: #9a5b00; --warn-soft: #fbefd9; --bad: #a8322d; --bad-soft: #f8e3e1;
+  --f-display: "Libre Franklin", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1719; --surface: #162226; --fg: #e3ecee; --muted: #94a7ad; --line: #27383d;
+    --accent: #5cc0c9; --accent-soft: #163a3e;
+    --good: #6fd19a; --good-soft: #17342a; --warn: #f0b75c; --warn-soft: #3a2c14; --bad: #f08a83; --bad-soft: #3d1f1d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1719; --surface: #162226; --fg: #e3ecee; --muted: #94a7ad; --line: #27383d;
+  --accent: #5cc0c9; --accent-soft: #163a3e;
+  --good: #6fd19a; --good-soft: #17342a; --warn: #f0b75c; --warn-soft: #3a2c14; --bad: #f08a83; --bad-soft: #3d1f1d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font: 16px/1.6 var(--f-body); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+main { max-width: 780px; margin: 0 auto; display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(1.7rem, 4.5vw, 2.3rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.3rem; font-weight: 700; }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+.eyebrow { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.meta { color: var(--muted); font-size: .9rem; }
+section { display: grid; gap: 16px; }
+.lead { font-size: 1.1rem; max-width: 65ch; }
+header { display: grid; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 28px; }
+.code { font-family: var(--f-mono); font-size: .88em; font-weight: 500; }
+.status { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { font-size: .8rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.acc { background: var(--accent-soft); color: var(--accent); }
+
+/* antes x depois */
+.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.period { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 10px; align-content: start; }
+.period ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.period.before h3 { color: var(--bad); }
+.period.after h3 { color: var(--good); }
+
+/* funil */
+.funnel { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.funnel li { display: grid; grid-template-columns: 44px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+.funnel li:not(:last-child)::after { content: ""; position: absolute; left: 21px; top: 38px; bottom: 0; width: 2px; background: var(--line); }
+.funnel .n { font-family: var(--f-mono); font-weight: 500; width: 44px; height: 32px; border-radius: 8px; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-size: .9rem; }
+.funnel .body { display: grid; gap: 3px; min-width: 0; padding-top: 4px; }
+.funnel .human { font-size: .85rem; color: var(--muted); }
+.funnel .human b { color: var(--warn); font-weight: 600; }
+
+/* travas */
+.guards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.guard { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+
+/* fatos */
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 24px; padding: 0; margin: 0; list-style: none; }
+.facts li { display: grid; gap: 2px; }
+.facts b { font-family: var(--f-display); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.facts span { color: var(--muted); font-size: .9rem; }
+.note { font-size: .9rem; color: var(--muted); max-width: 70ch; }
+
+/* próximas skills */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.steps li { display: grid; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.steps .owner { font-size: .85rem; color: var(--muted); }
+.quote { background: var(--accent-soft); border-radius: 10px; padding: 18px 22px; display: grid; gap: 8px; }
+footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: .85rem; color: var(--muted); display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <div class="eyebrow">BackOffice de Danos · Franquias</div>
+  <h1>Skill de cobrança de danos no Airbnb</h1>
+  <p class="lead">Uma rotina diária que conduz cada dano de hóspede pelo funil do Sapron até o Airbnb pagar ou negar, sem deixar prazo vencer. Ela substitui a memória da analista por alertas, leitura da tela real do Airbnb e escalada no tempo certo, sempre com ok humano antes de qualquer ação sem volta.</p>
+  <div class="status">
+    <span class="pill good">Pronta e entregue à Fabi</span>
+    <span class="pill acc">Em uso assistido</span>
+    <span class="pill warn">Aguardando validação</span>
+  </div>
+  <p class="meta">Atualizado em 26/10/2026 · Responsável: David Soares · Fontes: Sapron, Central de Resoluções do Airbnb, caixa contato@ e o estado da própria skill</p>
+</header>
+
+<section>
+  <div class="eyebrow">Por que existe</div>
+  <h2>Um dano de R$ 2.240 perdido por prazo, não por falta de razão</h2>
+  <p>O hóspede recusou o pagamento. A equipe esperou a evidência da franquia para escalar ao Airbnb e, quando escalou, já era o 36º dia depois do checkout. O AirCover só aceita o pedido de ajuda até o 30º dia, e negou em decisão final. Esse prazo de 30 dias não estava previsto em nenhum processo nosso: era uma trava da plataforma que só conhecemos com este caso.</p>
+  <p>O caso agora segue para cobrança judicial. A skill existe para que ele não se repita.</p>
+</section>
+
+<section>
+  <div class="eyebrow">O que muda</div>
+  <h2>Do controle de cabeça para um funil com alarme</h2>
+  <div class="compare">
+    <div class="period before">
+      <h3>Antes</h3>
+      <ul>
+        <li>Prazos de 14 e 30 dias controlados de memória, caso a caso.</li>
+        <li>O Sapron não sabe o estado do pedido no Airbnb; a tela só era aberta quando alguém lembrava.</li>
+        <li>Escalada segurada até a evidência ficar perfeita, mesmo com o prazo correndo.</li>
+        <li>Resultado de cada pedido (pago, negado, parcial) sem registro estruturado.</li>
+      </ul>
+    </div>
+    <div class="period after">
+      <h3>Com a skill</h3>
+      <ul>
+        <li>Todo dia começa por um mapa de prazos: o que vence hoje, o que está em alerta e o que já passou.</li>
+        <li>O estado real de cada pedido é lido na Central de Resoluções, não presumido.</li>
+        <li>Evidência boa escala na hora; fraca é pedida à franquia, e no 25º dia escala com o que tiver.</li>
+        <li>Cada caso fechado vira registro: valor pedido, valor pago, motivo e se a contestação mudou o resultado.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Como funciona</div>
+  <h2>8 etapas por dia, na ordem do funil do Sapron</h2>
+  <p class="note">Cada etapa termina com um resumo curto e a pergunta "sigo para a próxima?". Dentro de cada etapa, os casos vêm do mais urgente para o menos urgente.</p>
+  <ol class="funnel">
+    <li><span class="n">0</span><div class="body"><h3>Alertas de prazo</h3><p>Mostra tudo que vence: 14º dia para abrir o pedido, 15º dia em alerta para escalar, últimos 5 dias antes dos 30, casos vencidos e e-mails do Airbnb sem resposta. Caso vencido chega ao coordenador no mesmo dia.</p></div></li>
+    <li><span class="n">1</span><div class="body"><h3>Triagem dos danos novos</h3><p>Lê relato, fotos, vídeo e orçamento, confere a reserva e decide: cobrança direta ou validação com a franquia. Na validação, o texto do chamado já sai pronto.</p><p class="human">Ok humano: <b>caso a caso no início, até estabilizar</b></p></div></li>
+    <li><span class="n">2</span><div class="body"><h3>Validação com a franquia</h3><p>Acompanha a conversa de cada chamado, cobra de novo o que falta com prazo e leva ao time os casos travados perto do 14º dia.</p></div></li>
+    <li><span class="n">3</span><div class="body"><h3>Abertura do pedido no AirCover</h3><p>Prepara as evidências conforme os critérios do Airbnb e preenche o pedido pelo roteiro do formulário, parando na revisão.</p><p class="human">Ok humano: <b>antes de cada "Enviar"</b></p></div></li>
+    <li><span class="n">4</span><div class="body"><h3>Pedidos abertos</h3><p>Lê cada pedido na Central de Resoluções e registra o estado real: aguardando o hóspede, recusado, pago, com o Airbnb.</p></div></li>
+    <li><span class="n">5</span><div class="body"><h3>Escalada ao Airbnb</h3><p>Hóspede recusou ou passaram 24 h sem resposta: avalia a evidência. Boa, escala na hora. Fraca, pede à franquia o que falta. No 25º dia, escala com o que tiver, porque prazo perdido é perda certa e a evidência ainda pode ser completada depois.</p><p class="human">Ok humano: <b>no texto da justificativa, na primeira semana</b></p></div></li>
+    <li><span class="n">6</span><div class="body"><h3>Airbnb envolvido</h3><p>Responde os pedidos de "mais informações" item a item, registra pagamento ou negativa, avalia contestação e fecha o caso com o resultado.</p><p class="human">Ok humano: <b>em toda resposta ao Airbnb</b></p></div></li>
+    <li><span class="n">7</span><div class="body"><h3>Fechamento do dia</h3><p>Relatório do dia e placar acumulado do que o Airbnb pagou, negou ou pagou em parte, e por quê.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="eyebrow">Segurança</div>
+  <h2>Travas que não dependem de alguém lembrar</h2>
+  <div class="guards">
+    <div class="guard"><h3>Nunca duplica</h3><p>Antes de abrir, confere no Sapron se o dano não tem código AirCover nem está em "Cobrança Airbnb", e convive com a extensão que a Fabi já usa.</p></div>
+    <div class="guard"><h3>Sem clique sem volta sozinha</h3><p>Enviar, escalar, responder o Airbnb e gravar no Sapron passam por uma checagem e só seguem com autorização registrada.</p></div>
+    <div class="guard"><h3>Autonomia por mérito</h3><p>Cada ação começa com ok caso a caso. Depois de uma sequência de oks sem ajuste, pode subir para lote ou automático, e quem decide a subida é o coordenador. Um erro devolve a ação ao nível caso a caso.</p></div>
+    <div class="guard"><h3>Caso esdrúxulo sempre humano</h3><p>Valor acima de R$ 1.000, polícia, advogado, condomínio, terceiro, multa ou crime: sempre ok caso a caso.</p></div>
+    <div class="guard"><h3>Evidência íntegra</h3><p>Nenhuma edição de imagem; ao Airbnb vai o arquivo original. Vídeo entra sempre sem áudio.</p></div>
+    <div class="guard"><h3>Dado de hóspede protegido</h3><p>Nome, código de reserva e relato ficam numa pasta privada. Em chat, log e relatório vão só contagens e códigos de caso.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Onde está</div>
+  <h2>Estado real, sem arredondar</h2>
+  <ul class="facts">
+    <li><b>25</b><span>pedidos abertos lidos na Central de Resoluções na primeira rodada (21/10)</span></li>
+    <li><b>10</b><span>desses precisavam ser escalados naquele dia</span></li>
+    <li><b>5</b><span>pagos ou cancelados pelo Airbnb sem registro no Sapron, achados na mesma leitura</span></li>
+    <li><b>1</b><span>escalada real feita pela skill até agora, validada pela Fabi</span></li>
+  </ul>
+  <p class="note">A skill entrou em uso em 21/10/2026, então ainda não há casos fechados no placar dela. Também levantamos o histórico de pedidos de reembolso da caixa contato@ (2.304 conversas desde mai/2022) para medir a taxa de recuperação antes e depois da skill.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Próximos passos</div>
+  <h2>Fechar o ciclo de danos de ponta a ponta</h2>
+  <p>Hoje a skill cobre a cobrança pelo Airbnb. Para cobrir todo dano, cada frente abaixo entra como uma skill própria, chamada pela mesma rotina:</p>
+  <ul class="steps">
+    <li><h3>Cobrança direta ao hóspede em outras OTAs</h3><span class="owner">Reservas fora do Airbnb, pelo mesmo funil.</span></li>
+    <li><h3>Acionamento do EasyCover</h3><span class="owner">Reunir os dados do dano e preencher o formulário da seguradora.</span></li>
+    <li><h3>Análise de cobrança judicial</h3><span class="owner">Ler os casos já avaliados pelo jurídico no canal de cobranças extrajudiciais para achar o padrão de quando vale cobrar.</span></li>
+  </ul>
+  <div class="quote">
+    <h3>O ganho para a área</h3>
+    <p>A analista passa a decidir sobre os casos, e não a caçar prazo. O processo de danos ganha registro e indicador de recuperação no Airbnb.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Skill <span class="code">contestar-dano-airbnb</span> · repositório local do BackOffice de Danos.</p>
+  <p>Números da primeira rodada do monitor (21/10/2026) e do estado da skill em 26/10/2026.</p>
+</footer>
+
+</main>
+</body>
+</html>
